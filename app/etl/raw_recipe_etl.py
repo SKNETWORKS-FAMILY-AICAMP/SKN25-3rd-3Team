@@ -32,6 +32,7 @@ def run_etl(limit: int = DEFAULT_ETL_LIMIT, start_after_id: str | None = None) -
 
     inserted_count = 0
     overridden_count = 0
+    skipped_empty_count = 0
     failed_count = 0
     last_batch_raw_recipe_id = str(raw_recipes[-1].get("_id", ""))
 
@@ -44,6 +45,15 @@ def run_etl(limit: int = DEFAULT_ETL_LIMIT, start_after_id: str | None = None) -
 
             ingredients = _coerce_list(raw_recipe.get("ingredients"))
             steps = _coerce_list(raw_recipe.get("steps"))
+
+            if not ingredients or not steps:
+                skipped_empty_count += 1
+                print(
+                    f"[ETL] raw_recipe_id={raw_recipe_id} skip: "
+                    f"ingredients={len(ingredients)}, steps={len(steps)}"
+                )
+                continue
+
             parsed_ingredients = [parse_ingredient(ingredient) for ingredient in ingredients]
             parsed_recipe = build_parsed_recipe_payload(raw_recipe, parsed_ingredients)
 
@@ -67,7 +77,10 @@ def run_etl(limit: int = DEFAULT_ETL_LIMIT, start_after_id: str | None = None) -
                 overridden_count += 1
             print(f"[ETL] raw_recipe_id={raw_recipe_id} commit 완료")
 
-    print(f"[ETL] 종료 - inserted={inserted_count}, overridden={overridden_count}, failed={failed_count}")
+    print(
+        f"[ETL] 종료 - inserted={inserted_count}, overridden={overridden_count}, "
+        f"skipped_empty={skipped_empty_count}, failed={failed_count}"
+    )
     if failed_count == 0 and last_batch_raw_recipe_id:
         print(f"[ETL] 다음 실행용 start_after_id={last_batch_raw_recipe_id}")
         return last_batch_raw_recipe_id
