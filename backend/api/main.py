@@ -1,3 +1,10 @@
+# =====================================================================
+# [전체 프로젝트에서의 역할]
+# 이 파일은 FastAPI를 이용해 RAG 파이프라인을 웹 API 형태로 제공하는 백엔드 서버입니다.
+# 프론트엔드(UI)에서 넘겨준 질문과 취향 설정(알레르기, 소스 등)을 받아
+# pipeline.py의 RecipeAgent에 전달하고, 그 결과를 다시 프론트엔드로 응답합니다.
+# =====================================================================
+
 import os
 import sys
 from fastapi import FastAPI, HTTPException
@@ -11,10 +18,11 @@ root_dir = os.path.dirname(app_dir)
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
-from app.rag.agent_workflow import RecipeAgent
+# pipeline.py에서 에이전트를 불러옵니다.
+from backend.rag.pipeline import RecipeAgent
 
 # FastAPI 앱 초기화
-app = FastAPI(title="냉털봇 API", description="RAG 기반 냉장고 파먹기 레시피 추천 API")
+app = FastAPI(title="냉털봇 API", description="MongoDB Vector Search 기반 냉장고 파먹기 API")
 
 # 전역 에이전트 변수
 agent = None
@@ -27,12 +35,13 @@ async def startup_event():
     agent = RecipeAgent()
     print("[API] ✅ RecipeAgent 준비 완료!")
 
-# 클라이언트로부터 받을 데이터 구조 (Pydantic 모델)
+# '소스/양념' 데이터를 받을 수 있도록 모델을 업데이트
 class RecipeRequest(BaseModel):
     question: str
     allergies: str = "없음"
     difficulty: str = "초보"
     cooking_time: str = "30분"
+    saved_sauces: str = "없음"  # 새로 추가된 소스 정보
     chat_history: Optional[List[dict]] = []
 
 @app.post("/chat")
@@ -42,16 +51,18 @@ async def chat_with_agent(request: RecipeRequest):
         raise HTTPException(status_code=500, detail="에이전트가 아직 로드되지 않았습니다.")
     
     try:
+        # 'saved_sauces' 데이터를 preferences 딕셔너리에 묶어 파이프라인으로 넘겨줍니다.
         preferences = {
             "allergies": request.allergies,
             "difficulty": request.difficulty,
-            "cooking_time": request.cooking_time
+            "cooking_time": request.cooking_time,
+            "saved_sauces": request.saved_sauces
         }
         
         # 터미널에 요청 로그 출력
         print(f"\n[API Request] 질문: {request.question} | 설정: {preferences}")
         
-        # Agent 실행
+        # Agent 실행 (pipeline.py의 run 메서드 호출)
         answer = agent.run(
             question=request.question,
             preferences=preferences,
@@ -66,4 +77,4 @@ async def chat_with_agent(request: RecipeRequest):
 # 서버 실행용 코드 (테스트용)
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.api.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True)
