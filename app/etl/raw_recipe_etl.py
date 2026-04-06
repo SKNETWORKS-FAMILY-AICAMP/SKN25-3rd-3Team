@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..db.postgres_db import get_postgres_connection
-from .sink import insert_parsed_ingredients, insert_parsed_recipe, insert_parsed_steps
+from .sink import insert_parsed_ingredients, insert_parsed_recipe, insert_parsed_steps, replace_parsed_recipe_children
 from .source import get_mongo_data
 from .transform import build_parsed_recipe_payload, parse_ingredient
 
@@ -31,7 +31,7 @@ def run_etl(limit: int = DEFAULT_ETL_LIMIT, start_after_id: str | None = None) -
         return None
 
     inserted_count = 0
-    skipped_count = 0
+    overridden_count = 0
     failed_count = 0
     last_batch_raw_recipe_id = str(raw_recipes[-1].get("_id", ""))
 
@@ -52,8 +52,7 @@ def run_etl(limit: int = DEFAULT_ETL_LIMIT, start_after_id: str | None = None) -
                     with postgres_connection.cursor() as cursor:
                         parsed_recipe_id, created = insert_parsed_recipe(cursor, parsed_recipe)
                         if not created:
-                            skipped_count += 1
-                            continue
+                            replace_parsed_recipe_children(cursor, parsed_recipe_id)
 
                         insert_parsed_steps(cursor, parsed_recipe_id, steps)
                         insert_parsed_ingredients(cursor, parsed_recipe_id, parsed_ingredients)
@@ -62,10 +61,13 @@ def run_etl(limit: int = DEFAULT_ETL_LIMIT, start_after_id: str | None = None) -
                 print(f"[ETL] raw_recipe_id={raw_recipe_id} 실패, rollback 수행: {exc}")
                 continue
 
-            inserted_count += 1
+            if created:
+                inserted_count += 1
+            else:
+                overridden_count += 1
             print(f"[ETL] raw_recipe_id={raw_recipe_id} commit 완료")
 
-    print(f"[ETL] 종료 - inserted={inserted_count}, skipped={skipped_count}, failed={failed_count}")
+    print(f"[ETL] 종료 - inserted={inserted_count}, overridden={overridden_count}, failed={failed_count}")
     if failed_count == 0 and last_batch_raw_recipe_id:
         print(f"[ETL] 다음 실행용 start_after_id={last_batch_raw_recipe_id}")
         return last_batch_raw_recipe_id

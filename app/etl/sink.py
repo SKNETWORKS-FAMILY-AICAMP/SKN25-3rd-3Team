@@ -4,6 +4,12 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
+SELECT_PARSED_RECIPE_ID_SQL = """
+    SELECT id
+    FROM parsed_recipe
+    WHERE raw_recipe_id = %s
+"""
+
 INSERT_PARSED_RECIPE_SQL = """
     INSERT INTO parsed_recipe (
         raw_recipe_id,
@@ -18,8 +24,32 @@ INSERT_PARSED_RECIPE_SQL = """
         warnings
     )
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (raw_recipe_id) DO NOTHING
     RETURNING id
+"""
+
+UPDATE_PARSED_RECIPE_SQL = """
+    UPDATE parsed_recipe
+    SET
+        source = %s,
+        source_recipe_id = %s,
+        title = %s,
+        url = %s,
+        category_name = %s,
+        category_param = %s,
+        category_id = %s,
+        parse_status = %s,
+        warnings = %s
+    WHERE id = %s
+"""
+
+DELETE_PARSED_STEP_SQL = """
+    DELETE FROM parsed_recipe_step
+    WHERE parsed_recipe_id = %s
+"""
+
+DELETE_PARSED_INGREDIENT_SQL = """
+    DELETE FROM parsed_recipe_ingredient
+    WHERE parsed_recipe_id = %s
 """
 
 INSERT_PARSED_STEP_SQL = """
@@ -63,10 +93,33 @@ def _normalize_step_content(step: Any) -> str:
     return " ".join(step.split()).strip()
 
 
-def insert_parsed_recipe(cursor, parsed_recipe: dict[str, Any]) -> tuple[int | None, bool]:
+def insert_parsed_recipe(cursor, parsed_recipe: dict[str, Any]) -> tuple[int, bool]:
     """
     parsed_recipe를 적재하고 RETURNING id를 통해 FK 연결용 PK를 반환한다.
     """
+    cursor.execute(SELECT_PARSED_RECIPE_ID_SQL, (parsed_recipe["raw_recipe_id"],))
+    existing_row = cursor.fetchone()
+
+    if existing_row is not None:
+        parsed_recipe_id = existing_row["id"]
+        cursor.execute(
+            UPDATE_PARSED_RECIPE_SQL,
+            (
+                parsed_recipe["source"],
+                parsed_recipe["source_recipe_id"],
+                parsed_recipe["title"],
+                parsed_recipe["url"],
+                parsed_recipe["category_name"],
+                parsed_recipe["category_param"],
+                parsed_recipe["category_id"],
+                parsed_recipe["parse_status"],
+                Jsonb(parsed_recipe["warnings"]),
+                parsed_recipe_id,
+            ),
+        )
+        print(f"[PostgreSQL] raw_recipe_id={parsed_recipe['raw_recipe_id']} 기존 데이터를 override")
+        return parsed_recipe_id, False
+
     cursor.execute(
         INSERT_PARSED_RECIPE_SQL,
         (
@@ -83,14 +136,16 @@ def insert_parsed_recipe(cursor, parsed_recipe: dict[str, Any]) -> tuple[int | N
         ),
     )
     inserted_row = cursor.fetchone()
-    if inserted_row is None:
-        print(f"[PostgreSQL] raw_recipe_id={parsed_recipe['raw_recipe_id']} 는 이미 적재되어 있어 skip")
-        return None, False
-
     parsed_recipe_id = inserted_row["id"]
 
     print(f"[PostgreSQL] parsed_recipe insert 완료: id={parsed_recipe_id}")
     return parsed_recipe_id, True
+
+
+def replace_parsed_recipe_children(cursor, parsed_recipe_id: int) -> None:
+    cursor.execute(DELETE_PARSED_INGREDIENT_SQL, (parsed_recipe_id,))
+    cursor.execute(DELETE_PARSED_STEP_SQL, (parsed_recipe_id,))
+    print(f"[PostgreSQL] parsed_recipe_id={parsed_recipe_id} 기존 step/ingredient 삭제 완료")
 
 
 def insert_parsed_steps(cursor, parsed_recipe_id: int, steps: list[Any]) -> None:
