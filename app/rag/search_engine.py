@@ -43,23 +43,36 @@ def search_naver_blogs(query: str, display: int = 5, sort_type: str = "sim") -> 
         print(f"[ERROR] 네이버 API 호출 실패: {e}")
         return []
 
+def resolve_blog_url(url: str) -> str:
+    """
+    네이버 블로그 URL을 실제 포스트 URL로 변환합니다.
+    API 반환 link가 리다이렉트 URL인 경우 사람이 읽을 수 있는 형태로 바꿉니다.
+    """
+    if "blog.naver.com" in url:
+        match = re.search(r"blog\.naver\.com/([^/\?]+)/(\d+)", url)
+        if match:
+            blogger_id, log_no = match.groups()
+            return f"https://blog.naver.com/{blogger_id}/{log_no}"
+    return url
+
 def fetch_blog_body(url: str, max_chars: int = 2000) -> str:
     """
-    제공된 블로그 URL에 접속하여 실제 본문 텍스트를 추출(크롤링)합니다[cite: 104].
+    제공된 블로그 URL에 접속하여 실제 본문 텍스트를 추출(크롤링)합니다.
     네이버 블로그의 특수한 프레임 구조를 자동으로 처리합니다.
     """
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
         
         # 네이버 블로그 URL이 프레임 안에 갇혀 있는 경우 실제 포스트 주소로 변환합니다
+        fetch_url = url
         if "blog.naver.com" in url:
-            match = re.search(r"blog\.naver\.com/([^/]+)/(\d+)", url)
+            match = re.search(r"blog\.naver\.com/([^/\?]+)/(\d+)", url)
             if match:
                 blogger_id, log_no = match.groups()
-                url = f"https://blog.naver.com/PostView.naver?blogId={blogger_id}&logNo={log_no}"
+                fetch_url = f"https://blog.naver.com/PostView.naver?blogId={blogger_id}&logNo={log_no}"
 
         # 본문 데이터 요청
-        res = requests.get(url, timeout=8, headers=headers)
+        res = requests.get(fetch_url, timeout=8, headers=headers)
         res.raise_for_status()
         soup = BeautifulSoup(res.text, "html.parser")
 

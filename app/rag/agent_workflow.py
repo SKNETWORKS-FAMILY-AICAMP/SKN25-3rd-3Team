@@ -17,7 +17,8 @@ from app.rag.prompts import (
 from app.rag.search_engine import (
     search_naver_blogs, 
     fetch_blog_body, 
-    clean_html
+    clean_html,
+    resolve_blog_url
 )
 from app.rag.rag_loader import CHROMA_PERSIST_DIR, build_vector_db
 
@@ -25,17 +26,26 @@ load_dotenv()
 
 class RecipeAgent:
     def __init__(self):
-        # 1. 모델 설정 (요금 효율적인 gpt-4o-mini 사용) [cite: 19, 114]
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+        print("[Agent] RecipeAgent 초기화 시작...")
+        # 1. 모델 설정 (요금 효율적인 gpt-4o-mini 사용, 30초 타임아웃)
+        self.llm = ChatOpenAI(
+            model="gpt-4o-mini", 
+            temperature=0.2,
+            request_timeout=30
+        )
         
-        # 2. 임베딩 및 로컬 벡터 DB 로드 [cite: 15, 110]
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        # 2. 임베딩 및 로컬 벡터 DB 로드
+        self.embeddings = OpenAIEmbeddings(
+            model="text-embedding-3-small",
+            request_timeout=15
+        )
         self.vectorstore = Chroma(
             persist_directory=CHROMA_PERSIST_DIR,
             embedding_function=self.embeddings
         )
+        print(f"[Agent] RecipeAgent 초기화 완료! (DB 경로: {CHROMA_PERSIST_DIR})")
         
-        # 3. 검색 임계값 (유사도 점수 0.5 미만은 정보 부족으로 간주)
+        # 3. 검색 임계값
         self.similarity_threshold = 0.5 
 
     def _extract_keywords(self, question: str) -> str:
@@ -54,7 +64,8 @@ class RecipeAgent:
         # 1단계: 재료 추출 및 정찰 검색 (최신순 5개)
         ingredients = self._extract_keywords(question)
         print(f"[Agent] 추출된 재료: {ingredients} (정찰 검색 중...)")
-        explore_items = search_naver_blogs(ingredients, display=5, sort_type="date")
+        # 정찰 검색에 '레시피'를 붙여 맛집 리뷰 대신 요리법 포스팅이 걸리도록 함
+        explore_items = search_naver_blogs(f"{ingredients} 레시피", display=5, sort_type="date")
 
         if not explore_items:
             return ""
@@ -69,20 +80,15 @@ class RecipeAgent:
         for item in target_items:
             body = fetch_blog_body(item['link'])
             if body:
-                # LLM이 출처를 확인할 수 있도록 텍스트 맨 앞에 URL을 붙여줍니다.
-                content_with_url = f"출처 URL: {item['link']}\n\n{body}"
+                real_url = resolve_blog_url(item['link'])
+                # 💡 수정 포인트: 본문에 URL을 붙이지 않고 metadata에 안전하게 보관합니다.
                 from langchain_core.documents import Document
-                blog_docs.append(Document(page_content=content_with_url))
+                blog_docs.append(Document(page_content=body, metadata={"source_url": real_url}))
 
         if not blog_docs:
             return ""
 
         # 4단계: 실시간 임시 벡터 DB 구축 및 컨텍스트 추출
-        # (ChromaDB를 메모리 상에서 활용하여 필요한 부분만 검색)
-        from langchain_core.documents import Document
-        temp_docs = [Document(page_content=text) for text in blog_texts]
-        
-        # RecursiveCharacterTextSplitter를 사용해 500자 단위로 분할
         from langchain_text_splitters import RecursiveCharacterTextSplitter
         splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         chunks = splitter.split_documents(blog_docs)
@@ -90,17 +96,42 @@ class RecipeAgent:
         temp_db = Chroma.from_documents(documents=chunks, embedding=self.embeddings)
         relevant_docs = temp_db.similarity_search(dish_name, k=5)
         
-        return "\n\n".join([doc.page_content for doc in relevant_docs])
+        # 💡 수정 포인트: 검색된 조각들의 메타데이터에서 URL을 다시 꺼내옵니다. (중복 제거)
+        found_urls = set(doc.metadata.get("source_url", "") for doc in relevant_docs if doc.metadata.get("source_url"))
+        
+        # LLM에게 넘겨줄 최종 텍스트 조립
+        context_text = "\n\n".join([doc.page_content for doc in relevant_docs])
+        if found_urls:
+            urls_text = "\n".join([f"출처 URL: {url}" for url in found_urls])
+            return f"{context_text}\n\n[웹 검색 출처]\n{urls_text}"
+        
+        return context_text
 
     def run(self, question: str, preferences: Dict[str, str], chat_history: List = []) -> str:
-        # relevance_scores 대신 score(거리)를 가져옵니다. (거리는 작을수록 유사함)
-        local_results = self.vectorstore.similarity_search_with_score(question, k=3)
+        print(f"\n{'='*50}")
+        print(f"[Agent] run() 진입 - 질문: '{question}'")
+        print(f"[Agent] 설정: {preferences}")
+        print(f"{'='*50}")
         
-        # 코사인 거리 기준 0.4 미만(유사도 0.6 이상)인 것만 유효한 것으로 판단
-        valid_local = [doc for doc, score in local_results if score < 0.4] 
+        # 1단계: 질문에서 핵심 재료 키워드를 추출하여 검색 정확도를 높임
+        print("[Agent] 1단계: 키워드 추출 중 (OpenAI API 호출)...")
+        search_query = self._extract_keywords(question)
+        print(f"[Agent] 내부 DB 검색 키워드: '{search_query}'")
+        
+        # 2단계: 추출된 키워드로 로컬 벡터 DB 검색
+        local_results = self.vectorstore.similarity_search_with_score(search_query, k=5)
+        
+        # 디버깅: 실제 거리 점수와 매칭된 문서 제목 출력
+        for doc, score in local_results:
+            title = doc.metadata.get("title", doc.page_content[:30])
+            print(f"  - [{round(score, 3)}] {title}")
+        
+        # 코사인 거리 0.7 미만(유사도 0.3 이상)이면 유효한 것으로 판단
+        # (짧은 재료 키워드 vs 긴 레시피 문서 간 거리는 원래 넓게 나옴)
+        valid_local = [doc for doc, score in local_results if score < 0.7]
 
         if valid_local:
-            print(f"[Agent] 내부 DB에서 관련 레시피 발견 (거리 점수: {[round(s, 3) for d, s in local_results]})")
+            print(f"[Agent] 내부 DB에서 {len(valid_local)}개 관련 레시피 발견!")
             context = "\n\n".join([doc.page_content for doc in valid_local])
         else:
             print("[Agent] 내부 DB 정보 부족. 네이버 딥 크롤링 모드 가동.")
