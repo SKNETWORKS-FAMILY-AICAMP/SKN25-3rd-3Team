@@ -3,4 +3,4 @@
 .vscode/
 .idea/
 .env
-vector_db/
+vector_db/.venv/
