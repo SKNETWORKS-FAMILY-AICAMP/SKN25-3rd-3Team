@@ -9,7 +9,7 @@ RECIPE_SOURCE_NAME = "10000recipe"
 
 SPACE_PATTERN = re.compile(r"\s+")
 QUANTITY_PATTERN = re.compile(
-    r"(\d+(?:\.\d+)?)\s*(kg|g|ml|l|개|T|t|큰술|작은술)",
+    r"(\d+(?:\.\d+)?)\s*(kg|g|ml|l|개|T|t|큰술|작은술|장)",
     re.IGNORECASE,
 )
 UNIT_NORMALIZATION = {
@@ -22,6 +22,7 @@ UNIT_NORMALIZATION = {
     "t": "tsp",
     "큰술": "tbsp",
     "작은술": "tsp",
+    "장": "sheet"
 }
 TOOL_KEYWORDS = frozenset(
     {
