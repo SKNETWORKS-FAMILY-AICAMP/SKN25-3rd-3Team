@@ -8,9 +8,12 @@ from urllib.parse import urlsplit
 RECIPE_SOURCE_NAME = "10000recipe"
 
 SPACE_PATTERN = re.compile(r"\s+")
-QUANTITY_PATTERN = re.compile(
-    r"(\d+(?:\.\d+)?)\s*(kg|g|ml|l|개|T|t|큰술|작은술|장)",
+NUMERIC_QUANTITY_PATTERN = re.compile(
+    r"(\d+\s*/\s*\d+|\d+(?:\.\d+)?)\s*(kg|g|ml|l|개|대|줄기|인분|T|t|큰술|작은술|장|알|팩|봉|줌|숟가락|스푼)",
     re.IGNORECASE,
+)
+QUALITATIVE_QUANTITY_PATTERN = re.compile(
+    r"(약간|톡톡|툭툭|적당량|적당히|조금|소량|한줌|한 꼬집|한꼬집|넉넉히|선택)$"
 )
 UNIT_NORMALIZATION = {
     "g": "g",
@@ -18,18 +21,43 @@ UNIT_NORMALIZATION = {
     "ml": "ml",
     "l": "l",
     "개": "piece",
+    "대": "stalk",
+    "줄기": "stalk",
+    "인분": "serving",
     "T": "tbsp",
     "t": "tsp",
     "큰술": "tbsp",
     "작은술": "tsp",
-    "장": "sheet"
+    "장": "sheet",
+    "알": "piece",
+    "팩": "pack",
+    "봉": "bag",
+    "줌": "handful",
+    "숟가락": "spoon",
+    "스푼": "spoon",
 }
+QUALITATIVE_UNIT_NORMALIZATION = {
+    "약간": "to_taste",
+    "적당량": "to_taste",
+    "적당히": "to_taste",
+    "조금": "small_amount",
+    "소량": "small_amount",
+    "톡톡": "sprinkle",
+    "툭툭": "sprinkle",
+    "한줌": "handful",
+    "한 꼬집": "pinch",
+    "한꼬집": "pinch",
+    "넉넉히": "generous",
+    "선택": "optional",
+}
+OPTIONAL_INGREDIENT_KEYWORDS = {"선택"}
 TOOL_KEYWORDS = frozenset(
     {
         "도마",
         "칼",
         "볼",
         "접시",
+        "대접",
         "냄비",
         "프라이팬",
         "후라이팬",
@@ -68,13 +96,42 @@ def _coerce_optional_text(value: Any) -> str | None:
     return text or None
 
 
+def _find_quantity_match(text: str) -> tuple[re.Match[str] | None, str | None]:
+    numeric_match = NUMERIC_QUANTITY_PATTERN.search(text)
+    if numeric_match is not None:
+        return numeric_match, "numeric"
+
+    qualitative_match = QUALITATIVE_QUANTITY_PATTERN.search(text)
+    if qualitative_match is not None:
+        return qualitative_match, "qualitative"
+
+    return None, None
+
+
+def _parse_quantity_value(quantity_number_text: str) -> float:
+    normalized_number_text = quantity_number_text.replace(" ", "")
+    if "/" in normalized_number_text:
+        numerator_text, denominator_text = normalized_number_text.split("/", 1)
+        return float(numerator_text) / float(denominator_text)
+
+    return float(normalized_number_text)
+
+
 def _extract_quantity(text: str) -> tuple[str | None, float | None, str | None, str | None]:
-    quantity_match = QUANTITY_PATTERN.search(text)
-    if quantity_match is None:
+    quantity_match, quantity_match_type = _find_quantity_match(text)
+    if quantity_match is None or quantity_match_type is None:
         return None, None, None, None
 
-    quantity_text = quantity_match.group(0).strip()
-    quantity_value = float(quantity_match.group(1))
+    quantity_text = _normalize_spaces(quantity_match.group(0))
+    if quantity_match_type == "qualitative":
+        return (
+            quantity_text,
+            None,
+            quantity_text,
+            QUALITATIVE_UNIT_NORMALIZATION.get(quantity_text, quantity_text),
+        )
+
+    quantity_value = _parse_quantity_value(quantity_match.group(1))
     quantity_unit_raw = quantity_match.group(2)
     quantity_unit_normalized = UNIT_NORMALIZATION.get(
         quantity_unit_raw,
@@ -84,7 +141,9 @@ def _extract_quantity(text: str) -> tuple[str | None, float | None, str | None, 
 
 
 def _extract_ingredient_name(normalized_text: str) -> tuple[str | None, str | None]:
-    ingredient_name_raw = _normalize_spaces(QUANTITY_PATTERN.sub(" ", normalized_text)).strip(" ,")
+    quantity_match, _ = _find_quantity_match(normalized_text)
+    ingredient_name_source = normalized_text if quantity_match is None else normalized_text[: quantity_match.start()]
+    ingredient_name_raw = _normalize_spaces(ingredient_name_source).strip(" ,")
     if not ingredient_name_raw:
         return None, None
 
@@ -118,17 +177,22 @@ def parse_ingredient(raw_text: Any) -> dict[str, Any]:
     quantity_text, quantity_value, quantity_unit_raw, quantity_unit_normalized = _extract_quantity(normalized_text)
     ingredient_name_raw, ingredient_name_raw_normalized = _extract_ingredient_name(normalized_text)
     entity_type = _resolve_entity_type(ingredient_name_raw, normalized_text)
+    is_optional = quantity_text in OPTIONAL_INGREDIENT_KEYWORDS
     warnings: list[str] = []
 
     if entity_type == "tool":
         warnings.append("tool_detected")
     if quantity_text is None:
         warnings.append("missing_quantity")
+    elif quantity_value is None and not is_optional:
+        warnings.append("non_numeric_quantity")
+    if is_optional:
+        warnings.append("optional_ingredient")
 
     if not ingredient_name_raw:
         parse_status = "failed"
         warnings.append("missing_ingredient_name")
-    elif quantity_text is None:
+    elif quantity_text is None or quantity_value is None:
         parse_status = "partial"
     else:
         parse_status = "parsed"
@@ -144,7 +208,7 @@ def parse_ingredient(raw_text: Any) -> dict[str, Any]:
         "quantity_max": None,
         "quantity_unit_raw": quantity_unit_raw,
         "quantity_unit_normalized": quantity_unit_normalized,
-        "is_optional": False,
+        "is_optional": is_optional,
         "annotations": [],
         "entity_type": entity_type,
         "parse_status": parse_status,
