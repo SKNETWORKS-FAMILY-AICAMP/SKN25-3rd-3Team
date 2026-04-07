@@ -5,9 +5,12 @@
 # 2. 방대한 소스 데이터: 60여 개의 상세 소스 카테고리 데이터를 보유합니다.
 # =====================================================================
 
+import html as html_module
+import json
+import os
+
 import streamlit as st
 import streamlit.components.v1 as components
-import html as html_module
 
 def render_custom_css():
     st.markdown("""
@@ -48,6 +51,9 @@ def get_sauce_grid_html(saved_sauces):
     return html_out
 
 def render_fridge_ui(messages, is_open, just_opened, allergies, difficulty, cooking_time, saved_sauces):
+    api_chat_url = os.getenv("RECIPE_API_URL", "http://127.0.0.1:8000/chat")
+    saved_sauces_text = ", ".join(saved_sauces) if saved_sauces else "없음"
+    messages_json = json.dumps(messages, ensure_ascii=False).replace("</", "<\\/")
     msgs_html = ""
     for m in messages:
         safe_text = html_module.escape(m["text"]).replace("\n", "<br>")
@@ -184,8 +190,21 @@ def render_fridge_ui(messages, is_open, just_opened, allergies, difficulty, cook
     <script>
       {auto_open_script}
       var isOpen = {'true' if is_open else 'false'};
+      var apiChatUrl = {json.dumps(api_chat_url, ensure_ascii=False)};
+      var savedSauces = {json.dumps(saved_sauces_text, ensure_ascii=False)};
+      var chatHistory = {messages_json};
+      var isSending = false;
       var cb = document.getElementById('chatBody'); if(cb) cb.scrollTop = cb.scrollHeight;
       if (isOpen) {{ setTimeout(function() {{ var inp = document.getElementById('msgInput'); if(inp) inp.focus(); }}, 300); }}
+
+      function escapeHtml(text) {{
+        return String(text)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }}
 
       function handleFridgeClick() {{
         if (!isOpen) {{
@@ -204,27 +223,71 @@ def render_fridge_ui(messages, is_open, just_opened, allergies, difficulty, cook
 
       function addMsg(role, text) {{
         var div = document.createElement('div'); div.className = 'm' + (role==='user'?' u':'');
-        div.innerHTML = (role==='bot'?'<div class="m-icon">🤖</div>':'') + '<div class="bub '+(role==='bot'?'b':'u')+'">'+text+'</div>' + (role==='user'?'<div class="m-icon">🙋</div>':'');
+        var safeText = escapeHtml(text).replace(/\\n/g, '<br>');
+        div.innerHTML = (role==='bot'?'<div class="m-icon">🤖</div>':'') + '<div class="bub '+(role==='bot'?'b':'u')+'">'+safeText+'</div>' + (role==='user'?'<div class="m-icon">🙋</div>':'');
         cb.appendChild(div); cb.scrollTop = cb.scrollHeight;
+        return div;
       }}
 
-      function sendToStreamlit(text) {{
-        addMsg('user', text); addMsg('bot', '🍳 레시피를 찾고 있어요...');
+      function setSendingState(sending) {{
+        isSending = sending;
+        var inp = document.getElementById('msgInput');
+        var btn = document.querySelector('.send-btn');
+        if (inp) inp.disabled = sending;
+        if (btn) btn.disabled = sending;
+      }}
+
+      async function sendToStreamlit(text, source) {{
+        if (isSending) return;
+        addMsg('user', text);
+        chatHistory.push({{ role: 'user', text: text }});
+        var loadingMsg = addMsg('bot', '🍳 레시피를 찾고 있어요...');
         var p = getPrefs();
-        if (window.parent && window.parent.location) {{
-            var url = window.parent.location.origin + window.parent.location.pathname 
-                      + '?q=' + encodeURIComponent(text) + '&allergy=' + encodeURIComponent(p.a)
-                      + '&diff=' + encodeURIComponent(p.d) + '&time=' + encodeURIComponent(p.t);
-            window.parent.location.href = url;
+        var payload = {{
+          question: text,
+          allergies: p.a,
+          difficulty: p.d,
+          cooking_time: p.t,
+          saved_sauces: savedSauces,
+          chat_history: chatHistory.slice(-8)
+        }};
+
+        try {{
+          setSendingState(true);
+          var response = await fetch(apiChatUrl, {{
+            method: 'POST',
+            headers: {{ 'Content-Type': 'application/json' }},
+            body: JSON.stringify(payload)
+          }});
+          var rawBody = await response.text();
+
+          if (!response.ok) {{
+            throw new Error('HTTP ' + response.status + '\\n' + rawBody);
+          }}
+
+          var data = JSON.parse(rawBody);
+          var answer = data.answer || '레시피 서버 응답 형식이 올바르지 않습니다.';
+          if (loadingMsg && loadingMsg.remove) loadingMsg.remove();
+          addMsg('bot', answer);
+          chatHistory.push({{ role: 'bot', text: answer }});
+        }} catch (error) {{
+          if (loadingMsg && loadingMsg.remove) loadingMsg.remove();
+          var errorText = '서버 요청에 실패했습니다.\\n' + (error && error.message ? error.message : error);
+          addMsg('bot', errorText);
+          chatHistory.push({{ role: 'bot', text: errorText }});
+        }} finally {{
+          setSendingState(false);
+          var inp = document.getElementById('msgInput');
+          if (inp) inp.focus();
         }}
       }}
 
       function sendMsg(e) {{ 
           if (e && e.stopPropagation) e.stopPropagation(); 
           var inp = document.getElementById('msgInput'); var val = inp.value.trim(); 
-          if(val) {{ sendToStreamlit(val); inp.value=''; }} 
+          if(val) {{ sendToStreamlit(val, 'sendMsg'); inp.value=''; }} 
       }}
-      function sendFaq(e, text) {{ if (e && e.stopPropagation) e.stopPropagation(); sendToStreamlit(text); }}
+      function sendFaq(e, text) {{ if (e && e.stopPropagation) e.stopPropagation(); sendToStreamlit(text, 'sendFaq'); }}
       function getPrefs() {{ return {{ a: document.getElementById('allergyInput').value || '없음', d: document.getElementById('diffInput').value || '초보', t: document.getElementById('timeInput').value || '20분' }}; }}
       function togglePref(e) {{ 
           if (e && e.stopPropagation) e.stopPropagation(); 

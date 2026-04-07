@@ -8,6 +8,7 @@
 import os
 import sys
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -23,6 +24,12 @@ from backend.rag.pipeline import RecipeAgent
 
 # FastAPI 앱 초기화
 app = FastAPI(title="냉털봇 API", description="MongoDB Vector Search 기반 냉장고 파먹기 API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 전역 에이전트 변수
 agent = None
@@ -31,9 +38,7 @@ agent = None
 async def startup_event():
     """서버 시작 시 RecipeAgent를 한 번만 초기화하여 메모리에 적재합니다."""
     global agent
-    print("[API] 🚀 FastAPI 서버 시작: RecipeAgent 초기화를 진행합니다...")
     agent = RecipeAgent()
-    print("[API] ✅ RecipeAgent 준비 완료!")
 
 # '소스/양념' 데이터를 받을 수 있도록 모델을 업데이트
 class RecipeRequest(BaseModel):
@@ -59,9 +64,6 @@ async def chat_with_agent(request: RecipeRequest):
             "saved_sauces": request.saved_sauces
         }
         
-        # 터미널에 요청 로그 출력
-        print(f"\n[API Request] 질문: {request.question} | 설정: {preferences}")
-        
         # Agent 실행 (pipeline.py의 run 메서드 호출)
         answer = agent.run(
             question=request.question,
@@ -71,7 +73,6 @@ async def chat_with_agent(request: RecipeRequest):
         return {"answer": answer}
         
     except Exception as e:
-        print(f"[API Error] {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # 서버 실행용 코드 (테스트용)
