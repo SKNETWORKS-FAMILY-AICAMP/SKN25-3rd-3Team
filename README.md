@@ -1,8 +1,15 @@
 # SKN25-3rd-3Team
 
 # 1. 팀 소개
-
+| 이름 | GitHub | 역할 |
+| :--- | :---: | :--- |
+| 권가영 | [@Gayoung03](https://github.com/Gayoung03) | 한 일 적기 |
+| 김연준 | [@cudaboy](https://github.com/cudaboy) | 한 일 적기 |
+| 전운열 | [@happyhippo-cmd](https://github.com/아이디) | 한 일 적기 |
+| 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 한 일 적기 |
+| 최유림 |  | 한 일 적기 |
 # 2. 프로젝트 기간
+2026.4.6. - 2026.4.7.
 
 # 3. 프로젝트 개요
 
