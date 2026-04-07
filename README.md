@@ -82,6 +82,10 @@ SKN25-3RD-3TEAM/
 
 
 # 5. 수행결과
-나중에 영상 넣기?
+
+https://github.com/user-attachments/assets/0533d0f2-6f13-4a20-a514-6a895814f425
+
+
+
 
 # 6. 한 줄 회고
