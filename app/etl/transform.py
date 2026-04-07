@@ -9,21 +9,26 @@ RECIPE_SOURCE_NAME = "10000recipe"
 
 SPACE_PATTERN = re.compile(r"\s+")
 NUMERIC_QUANTITY_PATTERN = re.compile(
-    r"(\d+\s*/\s*\d+|\d+(?:\.\d+)?)\s*(kg|g|ml|l|개|대|줄기|인분|T|t|큰술|작은술|장|알|팩|봉|줌|숟가락|스푼)",
+    r"(\d+\s*/\s*\d+|\d+(?:\.\d+)?)\s*(kg|g|ml|l|리터|개|대|줄기|인분|공기|줄|모|T|t|큰술|작은술|장|알|팩|봉|줌|움큼|숟가락|숟갈|밥숟가락|스푼|술|컵|종이컵|소주컵|포|마리|캔|통|조각|블럭|블록|근)",
     re.IGNORECASE,
 )
+UNITLESS_NUMERIC_QUANTITY_PATTERN = re.compile(r"(?<!\S)(\d+\s*/\s*\d+|\d+(?:\.\d+)?)(?=\s*$)")
 QUALITATIVE_QUANTITY_PATTERN = re.compile(
-    r"(약간|톡톡|툭툭|적당량|적당히|조금|소량|한줌|한 꼬집|한꼬집|넉넉히|선택)$"
+    r"(약간|톡톡|툭툭|솔솔|적당량|적당히|조금|소량|한줌|한 꼬집|한꼬집|넉넉히|선택|취향껏)$"
 )
 UNIT_NORMALIZATION = {
     "g": "g",
     "kg": "kg",
     "ml": "ml",
     "l": "l",
+    "리터": "l",
     "개": "piece",
     "대": "stalk",
     "줄기": "stalk",
     "인분": "serving",
+    "공기": "bowl",
+    "줄": "strip",
+    "모": "block",
     "T": "tbsp",
     "t": "tsp",
     "큰술": "tbsp",
@@ -33,8 +38,23 @@ UNIT_NORMALIZATION = {
     "팩": "pack",
     "봉": "bag",
     "줌": "handful",
+    "움큼": "handful",
     "숟가락": "spoon",
+    "숟갈": "spoon",
+    "밥숟가락": "rice_spoon",
     "스푼": "spoon",
+    "술": "spoon",
+    "컵": "cup",
+    "종이컵": "paper_cup",
+    "소주컵": "soju_cup",
+    "포": "pack",
+    "마리": "piece",
+    "캔": "can",
+    "통": "container",
+    "조각": "piece",
+    "블럭": "block",
+    "블록": "block",
+    "근": "geun",
 }
 QUALITATIVE_UNIT_NORMALIZATION = {
     "약간": "to_taste",
@@ -44,15 +64,25 @@ QUALITATIVE_UNIT_NORMALIZATION = {
     "소량": "small_amount",
     "톡톡": "sprinkle",
     "툭툭": "sprinkle",
+    "솔솔": "sprinkle",
     "한줌": "handful",
     "한 꼬집": "pinch",
     "한꼬집": "pinch",
     "넉넉히": "generous",
     "선택": "optional",
+    "취향껏": "to_preference",
 }
 OPTIONAL_INGREDIENT_KEYWORDS = {"선택"}
 TOOL_KEYWORDS = frozenset(
     {
+        "가스버너",
+        "버너",
+        "가위",
+        "강판",
+        "거름채망",
+        "채망",
+        "계량컵",
+        "과도",
         "도마",
         "칼",
         "볼",
@@ -67,9 +97,12 @@ TOOL_KEYWORDS = frozenset(
         "주걱",
         "나이프",
         "스푼",
+        "수저",
         "포크",
+        "젓가락",
         "채반",
         "뒤집개",
+        "면기",
         "장갑",
         "랩",
         "전자레인지",
@@ -97,9 +130,13 @@ def _coerce_optional_text(value: Any) -> str | None:
 
 
 def _find_quantity_match(text: str) -> tuple[re.Match[str] | None, str | None]:
-    numeric_match = NUMERIC_QUANTITY_PATTERN.search(text)
-    if numeric_match is not None:
-        return numeric_match, "numeric"
+    numeric_matches = list(NUMERIC_QUANTITY_PATTERN.finditer(text))
+    if numeric_matches:
+        return numeric_matches[-1], "numeric"
+
+    unitless_numeric_match = UNITLESS_NUMERIC_QUANTITY_PATTERN.search(text)
+    if unitless_numeric_match is not None:
+        return unitless_numeric_match, "numeric_unitless"
 
     qualitative_match = QUALITATIVE_QUANTITY_PATTERN.search(text)
     if qualitative_match is not None:
@@ -132,6 +169,9 @@ def _extract_quantity(text: str) -> tuple[str | None, float | None, str | None, 
         )
 
     quantity_value = _parse_quantity_value(quantity_match.group(1))
+    if quantity_match_type == "numeric_unitless":
+        return quantity_text, quantity_value, None, None
+
     quantity_unit_raw = quantity_match.group(2)
     quantity_unit_normalized = UNIT_NORMALIZATION.get(
         quantity_unit_raw,
@@ -143,6 +183,14 @@ def _extract_quantity(text: str) -> tuple[str | None, float | None, str | None, 
 def _extract_ingredient_name(normalized_text: str) -> tuple[str | None, str | None]:
     quantity_match, _ = _find_quantity_match(normalized_text)
     ingredient_name_source = normalized_text if quantity_match is None else normalized_text[: quantity_match.start()]
+    ingredient_name_source = re.sub(
+        r"(\d+\s*/\s*\d+|\d+(?:\.\d+)?)\s*"
+        r"(kg|g|ml|l|리터|개|대|줄기|인분|공기|줄|모|T|t|큰술|작은술|장|알|팩|봉|줌|움큼|숟가락|숟갈|밥숟가락|스푼|술|컵|종이컵|소주컵|포|마리|캔|통|조각|블럭|블록|근)"
+        r"\s*기준\s*$",
+        "",
+        ingredient_name_source,
+        flags=re.IGNORECASE,
+    )
     ingredient_name_raw = _normalize_spaces(ingredient_name_source).strip(" ,")
     if not ingredient_name_raw:
         return None, None
