@@ -1,14 +1,26 @@
 # SKN25-3rd-3Team
 
 # 1. 팀 소개
-
+| 이름 | GitHub | 역할 |
+| :--- | :---: | :--- |
+| 권가영 | [@Gayoung03](https://github.com/Gayoung03) | 한 일 적기 |
+| 김연준 | [@kgbrladuswns](https://github.com/kgbrladuswns) | 한 일 적기 |
+| 전운열 | [@cudaboy](https://github.com/cudaboy) | 한 일 적기 |
+| 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 한 일 적기 |
+| 최유림 | [@yulim8823](https://github.com/yulim8823) | 한 일 적기 |
 # 2. 프로젝트 기간
+2026.4.6. - 2026.4.7.
 
 # 3. 프로젝트 개요
 
 ## 📕 프로젝트명
+"AI 냉털봇: 너의 냉장고를 구해줘"
+(RAG 기반 지능형 식재료 맞춤 레시피 추천 시스템)
 
 ## ✅ 프로젝트 배경 및 목적
+• 배경: 6만 건 이상의 방대한 레시피 데이터가 존재하지만, 사용자가 가진 '남은 식재료' 조합에 딱 맞는 요리를 찾기 위해 일일이 검색하고 필터링하는 과정은 여전히 번거롭고 직관적이지 못함.
+
+• 목적: 사용자가 자연어로 냉장고 속 재료를 말하면, 벡터 검색(Vector Search) 기술을 통해 가장 유사도가 높은 레시피를 찾아내고, LLM(대규모 언어 모델)이 이를 맛있게 요약하여 추천하는 개인화된 요리 어시스턴트 구축.
 
 ## 🖐️ 프로젝트 소개
 
@@ -35,10 +47,38 @@ SKN25-3RD-3TEAM/
 ```
 
 ## ❤️ 기대효과
+• 식재료 낭비 감소: 냉장고에 남은 자투리 재료를 활용할 수 있는 최적의 레시피를 제안하여 음식물 쓰레기 절감에 기여.
+
+• 결정 장애 해소: "오늘 뭐 먹지?"라는 고민에 대해 데이터 기반의 신뢰도 높은 답변을 즉각적으로 제공.
+
+• 정확한 정보 전달: 단순한 텍스트 답변을 넘어 실제 요리 커뮤니티(1만개의 레시피 등)의 원본 링크와 상세 조리 순서를 제공하여 실질적인 요리 수행을 도움.
 
 ## 👤 대상 사용자
+• 자취생 및 1인 가구: 소량으로 남은 재료 처리가 고민인 사용자.
+
+• 초보 요리사: 재료 이름만으로 간단하고 명확한 조리법을 찾고 싶은 사용자.
+
+• 바쁜 직장인: 퇴근 후 냉장고에 있는 재료로 빠르게 메뉴를 결정하고 싶은 사람.
+
+• 식단 관리가 필요한 사람: 특정 재료(알레르기 유발 재료 등)를 제외하고 안전한 요리를 찾고 싶은 사용자.
 
 # 4. 기술 스택
+- **Language**
+  - ![Python](https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+
+- **Database**
+  - ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+
+- **Pipeline**
+  - ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=linkerd&logoColor=white)
+
+- **API**
+  - ![OpenAI](https://img.shields.io/badge/OpenAI-000000?style=for-the-badge&logo=openai&logoColor=white)
+  - ![Naver](https://img.shields.io/badge/Naver-03C75A?style=for-the-badge&logo=naver&logoColor=white)
+ 
+- **Visualization**
+  - ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)
+
 
 # 5. 수행결과
 
