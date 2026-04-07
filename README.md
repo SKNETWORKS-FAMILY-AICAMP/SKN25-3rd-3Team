@@ -4,10 +4,10 @@
 | 이름 | GitHub | 역할 |
 | :--- | :---: | :--- |
 | 권가영 | [@Gayoung03](https://github.com/Gayoung03) | 한 일 적기 |
-| 김연준 |  | 한 일 적기 |
+| 김연준 | [@kgbrladuswns](https://github.com/kgbrladuswns) | 한 일 적기 |
 | 전운열 | [@cudaboy](https://github.com/cudaboy) | 한 일 적기 |
 | 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 한 일 적기 |
-| 최유림 |  | 한 일 적기 |
+| 최유림 | [@yulim8823](https://github.com/yulim8823) | 한 일 적기 |
 # 2. 프로젝트 기간
 2026.4.6. - 2026.4.7.
 
