@@ -3,11 +3,11 @@
 # 1. 팀 소개
 | 이름 | GitHub | 역할 |
 | :--- | :---: | :--- |
-| 권가영 | [@Gayoung03](https://github.com/Gayoung03) | 한 일 적기 |
-| 김연준 | [@kgbrladuswns](https://github.com/kgbrladuswns) | 한 일 적기 |
-| 전운열 | [@cudaboy](https://github.com/cudaboy) | 한 일 적기 |
-| 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 한 일 적기 |
-| 최유림 | [@yulim8823](https://github.com/yulim8823) | 한 일 적기 |
+| 권가영 | [@Gayoung03](https://github.com/Gayoung03) | 네이버 검색 API 기반 실시간 데이터 검증, GPT 연동 RAG 파이프라인 구축|
+| 김연준 | [@kgbrladuswns](https://github.com/kgbrladuswns) | 코드베이스 구축, 정규화 DDL 생성, ETL Transform  |
+| 전운열 | [@cudaboy](https://github.com/cudaboy) | LangChain 아키텍처 구축, 발표 |
+| 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 데이터베이스 구축, 데이터 파이프라인 설계 |
+| 최유림 | [@yulim8823](https://github.com/yulim8823) | 아이디어 제시, 웹 크롤링, 발표 자료(PPT) 작성 |
 # 2. 프로젝트 기간
 2026.4.6. - 2026.4.7.
 
@@ -65,6 +65,7 @@ SKN25-3RD-3TEAM/
 # 4. 기술 스택
 - **Language**
   - ![Python](https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+  - ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 
 - **Database**
   - ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
@@ -81,5 +82,6 @@ SKN25-3RD-3TEAM/
 
 
 # 5. 수행결과
+나중에 영상 넣기?0
 
 # 6. 한 줄 회고
