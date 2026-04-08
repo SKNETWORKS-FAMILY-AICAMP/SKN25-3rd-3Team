@@ -3,7 +3,7 @@
 # 1. 팀 소개
 | 이름 | GitHub | 역할 |
 | :--- | :---: | :--- |
-| 권가영 | [@Gayoung03](https://github.com/Gayoung03) | 네이버 검색 API 기반 실시간 데이터 검증, GPT 연동 RAG 파이프라인 구축|
+| 권가영 | [@Gayoung03](https://github.com/Gayoung03) | GPT 기반 실시간 RAG 시스템 및 데이터 ETL 자동화 파이프라인 구축|
 | 김연준 | [@kgbrladuswns](https://github.com/kgbrladuswns) | 코드베이스 구축, 정규화 DDL 생성, ETL Transform  |
 | 전운열 | [@cudaboy](https://github.com/cudaboy) | LangChain 아키텍처 구축, 발표 |
 | 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 데이터베이스 구축, 데이터 파이프라인 설계 |
@@ -25,6 +25,7 @@
 
 ## 🖐️ 프로젝트 소개
 
+### (1) 디렉토리 구조
 ```
 SKN25-3RD-3TEAM/
 ├── backend/
@@ -46,6 +47,9 @@ SKN25-3RD-3TEAM/
 ├── .env                        # API 키 및 DB URI (MONGO_URI 필수)
 └── requirements.txt            # 의존성 패키지 (psycopg, chromadb 등은 삭제 가능)
 ```
+### (2) 시스템 구조
+<img width="1095" height="615" alt="시스템" src="https://github.com/user-attachments/assets/deb26b6f-27fc-4daf-bcdf-b533aa4f804e" />
+
 
 ## ❤️ 기대효과
 • 식재료 낭비 감소: 냉장고에 남은 자투리 재료를 활용할 수 있는 최적의 레시피를 제안하여 음식물 쓰레기 절감에 기여.
