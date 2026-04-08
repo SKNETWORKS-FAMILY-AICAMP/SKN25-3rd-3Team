@@ -8,6 +8,7 @@
 | 전운열 | [@cudaboy](https://github.com/cudaboy) | LangChain 아키텍처 구축, 발표 |
 | 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 데이터베이스 구축, 데이터 파이프라인 설계 |
 | 최유림 | [@yulim8823](https://github.com/yulim8823) | 아이디어 제시, 웹 크롤링, 발표 자료(PPT) 작성 |
+
 # 2. 프로젝트 기간
 2026.4.6. - 2026.4.7.
 
@@ -28,20 +29,20 @@
 SKN25-3RD-3TEAM/
 ├── backend/
 │   ├── db/
-│   │   └── mongo_db.py         # 🔄 (수정) MongoDB 연결 및 컬렉션 반환 모듈
+│   │   └── mongo_db.py         # MongoDB 연결 및 컬렉션 반환 모듈
 │   ├── etl/
-│   │   └── embed_recipes.py    # 🆕 (신규) 노트북의 "데이터 1000개씩 임베딩 넣는 반복문"을 스크립트화 한 파일
+│   │   └── embed_recipes.py    # 노트북의 "데이터 1000개씩 임베딩 넣는 반복문"을 스크립트화 한 파일
 │   ├── rag/
-│   │   ├── prompts.py          # 🔄 (수정) 재료 추출 및 레시피 추천용 프롬프트 분리 보관
-│   │   ├── retriever.py        # 🆕 (신규) MongoDB Atlas Vector Search 검색 로직
-│   │   ├── pipeline.py         # 🆕 (신규) 질문 -> 추출 -> 검색 -> 답변생성 (기존 agent_workflow 대체)
-│   │   └── search_engine.py    # ✅ (유지) DB에 레시피가 없을 때를 대비한 네이버 크롤링 웹 검색 도구
+│   │   ├── prompts.py          # 재료 추출 및 레시피 추천용 프롬프트 분리 보관
+│   │   ├── retriever.py        # MongoDB Atlas Vector Search 검색 로직
+│   │   ├── pipeline.py         # 질문 -> 추출 -> 검색 -> 답변생성
+│   │   └── search_engine.py    # DB에 레시피가 없을 때를 대비한 네이버 크롤링 웹 검색 도구
 │   ├── api/
-│   │   └── main.py             # ✅ (유지) FastAPI 백엔드 엔드포인트
+│   │   └── main.py             # FastAPI 백엔드 엔드포인트
 │   └── utils/
-│       └── config.py           # 🆕 (신규) .env 로드 및 OpenAI/MongoDB 전역 클라이언트 설정
+│       └── config.py           # .env 로드 및 OpenAI/MongoDB 전역 클라이언트 설정
 ├── frontend/
-│   └── recipe_ui.py            # ✅ (유지) Streamlit UI 프론트엔드
+│   └── recipe_ui.py            # Streamlit UI 프론트엔드
 ├── .env                        # API 키 및 DB URI (MONGO_URI 필수)
 └── requirements.txt            # 의존성 패키지 (psycopg, chromadb 등은 삭제 가능)
 ```
@@ -51,7 +52,7 @@ SKN25-3RD-3TEAM/
 
 • 결정 장애 해소: "오늘 뭐 먹지?"라는 고민에 대해 데이터 기반의 신뢰도 높은 답변을 즉각적으로 제공.
 
-• 정확한 정보 전달: 단순한 텍스트 답변을 넘어 실제 요리 커뮤니티(1만개의 레시피 등)의 원본 링크와 상세 조리 순서를 제공하여 실질적인 요리 수행을 도움.
+• 정확한 정보 전달: 단순한 텍스트 답변을 넘어 실제 요리 커뮤니티(6만여개의 레시피 등)의 원본 링크와 상세 조리 순서를 제공하여 실질적인 요리 수행을 도움.
 
 ## 👤 대상 사용자
 • 자취생 및 1인 가구: 소량으로 남은 재료 처리가 고민인 사용자.
