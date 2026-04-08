@@ -66,24 +66,29 @@
 # 5. 프로젝트 디렉토리 구조
 ```
 SKN25-3RD-3TEAM/
+├── app/                          # 추후 진행할 내용 정리 folder
+│   ├── etl/
+│   │   └── config.py             # PostgreSQL 이용 데이터 정규화 및 전처리
+│   └── main.ipynb                # PostgreSQL 전처리 결과물  탐색/검증 테스트
 ├── backend/
 │   ├── db/
-│   │   └── mongo_db.py         # MongoDB 연결 및 컬렉션 반환 모듈
+│   │   └── mongo_db.py           # MongoDB 연결 및 컬렉션 반환 모듈
 │   ├── etl/
-│   │   └── embed_recipes.py    # 데이터 1000개씩 임베딩하는 ETL 자동화 스크립트
+│   │   ├── embed_recipes.py      # 데이터 1000개씩 임베딩하는 ETL 자동화 스크립트
+│   │   └── recipe_final_timer.py # 최신 레시피 100개 자동 업데이트 스케줄러
 │   ├── rag/
-│   │   ├── prompts.py          # 재료 추출 및 레시피 추천용 프롬프트 보관
-│   │   ├── retriever.py        # MongoDB Atlas Vector Search 검색 로직
-│   │   ├── pipeline.py         # 질문 -> 추출 -> 검색 -> 답변생성 파이프라인
-│   │   └── search_engine.py    # DB 데이터 부족 시 네이버 크롤링 Fallback 도구
+│   │   ├── prompts.py            # 재료 추출 및 레시피 추천용 프롬프트 보관
+│   │   ├── retriever.py          # MongoDB Atlas Vector Search 검색 로직
+│   │   ├── pipeline.py           # 질문 -> 추출 -> 검색 -> 답변생성 파이프라인
+│   │   └── search_engine.py      # DB 데이터 부족 시 네이버 크롤링 Fallback 도구
 │   ├── api/
-│   │   └── main.py             # FastAPI 백엔드 엔드포인트
+│   │   └── main.py               # FastAPI 백엔드 엔드포인트
 │   └── utils/
-│       └── config.py           # .env 로드 및 전역 클라이언트 설정
+│       └── config.py             # .env 로드 및 전역 클라이언트 설정
 ├── frontend/
-│   └── recipe_ui.py            # Streamlit UI 프론트엔드
-├── .env                        # API 키 및 DB URI
-└── requirements.txt            # 의존성 패키지
+│   └── recipe_ui.py              # Streamlit UI 프론트엔드
+├── .env                          # API 키 및 DB URI
+└── requirements.txt              # 의존성 패키지
 ```
 
 
