@@ -24,6 +24,7 @@
 
 ## 🖐️ 프로젝트 소개
 
+### (1) 디렉토리 구조
 ```
 SKN25-3RD-3TEAM/
 ├── backend/
@@ -45,6 +46,8 @@ SKN25-3RD-3TEAM/
 ├── .env                        # API 키 및 DB URI (MONGO_URI 필수)
 └── requirements.txt            # 의존성 패키지 (psycopg, chromadb 등은 삭제 가능)
 ```
+### (2) 시스템 구조
+<img width="1095" height="615" alt="image" src="https://github.com/user-attachments/assets/3324e17d-db5e-49d3-b0eb-4ee371295191" />
 
 ## ❤️ 기대효과
 • 식재료 낭비 감소: 냉장고에 남은 자투리 재료를 활용할 수 있는 최적의 레시피를 제안하여 음식물 쓰레기 절감에 기여.
