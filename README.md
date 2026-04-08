@@ -47,7 +47,8 @@ SKN25-3RD-3TEAM/
 └── requirements.txt            # 의존성 패키지 (psycopg, chromadb 등은 삭제 가능)
 ```
 ### (2) 시스템 구조
-<img width="1095" height="615" alt="image" src="https://github.com/user-attachments/assets/3324e17d-db5e-49d3-b0eb-4ee371295191" />
+<img width="1095" height="615" alt="시스템" src="https://github.com/user-attachments/assets/deb26b6f-27fc-4daf-bcdf-b533aa4f804e" />
+
 
 ## ❤️ 기대효과
 • 식재료 낭비 감소: 냉장고에 남은 자투리 재료를 활용할 수 있는 최적의 레시피를 제안하여 음식물 쓰레기 절감에 기여.
