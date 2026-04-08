@@ -3,7 +3,7 @@
 # 1. 팀 소개
 | 이름 | GitHub | 역할 |
 | :--- | :---: | :--- |
-| 권가영 | [@Gayoung03](https://github.com/Gayoung03) | 네이버 검색 API 기반 실시간 데이터 검증, GPT 연동 RAG 파이프라인 구축|
+| 권가영 | [@Gayoung03](https://github.com/Gayoung03) | GPT 기반 실시간 RAG 시스템 및 데이터 ETL 자동화 파이프라인 구축|
 | 김연준 | [@kgbrladuswns](https://github.com/kgbrladuswns) | 코드베이스 구축, 정규화 DDL 생성, ETL Transform  |
 | 전운열 | [@cudaboy](https://github.com/cudaboy) | LangChain 아키텍처 구축, 발표 |
 | 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 데이터베이스 구축, 데이터 파이프라인 설계 |
