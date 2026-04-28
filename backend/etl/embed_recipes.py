@@ -105,8 +105,14 @@ def run_embedding_job():
                 dimensions=DIMENSIONS
             )
             ops = [
-                UpdateOne({"_id": _id}, {"$set": {"ingredients_embedding": data.embedding}})
-                for _id, data in zip(current_batch_ids, response.data)
+                UpdateOne(
+                    {"_id": _id}, 
+                    {"$set": {
+                        "ingredients_embedding": data.embedding,
+                        "ingredients_text": text
+                    }}
+                )
+                for _id, data, text in zip(current_batch_ids, response.data, current_batch_texts)
             ]
             recipe_collection.bulk_write(ops)
             processed_count += len(ops)

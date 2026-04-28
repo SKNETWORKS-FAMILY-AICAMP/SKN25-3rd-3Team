@@ -28,8 +28,6 @@ class RecipeAgent:
 
     # ---------------------------------------------------------------------
     # 1. 식재료 추출 체인 (LCEL)
-    # [설계 의도] 사용자의 자연어 질문에서 검색에 필요한 키워드만 정교하게 추출합니다.
-    # LCEL의 파이프 연산자(|)를 사용하여 데이터 흐름을 명확하게 정의했습니다.
     # ---------------------------------------------------------------------
     def _extract_ingredients(self, user_query: str) -> str:
         """사용자 입력에서 요리 재료 키워드만 추출합니다."""
@@ -47,8 +45,6 @@ class RecipeAgent:
 
     # ---------------------------------------------------------------------
     # 2. 네이버 블로그 검색 및 요리명 확정 로직 (Fallback)
-    # [설계 의도] 내부 DB 검색 결과가 부족할 때 가동되며, 웹 검색 결과로부터
-    # 가장 적절한 요리명을 LLM 체인을 통해 도출해냅니다.
     # ---------------------------------------------------------------------
     def _fallback_web_search(self, ingredients_str: str) -> list:
         print(f"🕵️ [Web Search] DB 내 관련 정보 부족. 네이버 블로그 검색으로 전환합니다...")
@@ -82,8 +78,6 @@ class RecipeAgent:
 
     # ---------------------------------------------------------------------
     # 3. 전체 파이프라인 가동 (Main Run)
-    # [설계 의도] 재료 추출 -> 검색 -> 최종 답변 생성의 단계를 거칩니다.
-    # 최종 답변 생성 단계에서는 LangChain 메시지 구조를 사용하여 대화의 문맥을 유지합니다.
     # ---------------------------------------------------------------------
     def run(self, question: str, preferences: dict = None, chat_history: list = None) -> str:
         # Step 1: 재료 추출 체인 가동
@@ -102,7 +96,6 @@ class RecipeAgent:
             return f"현재 적절한 레시피 정보를 찾지 못했습니다."
 
         # Step 4: 최종 답변 생성 체인 구축 (LCEL)
-        # build_system_prompt를 활용해 동적인 지시문을 생성합니다.
         system_text = build_system_prompt(retrieved_recipes, preferences)
         
         messages = [("system", system_text)]
@@ -116,10 +109,30 @@ class RecipeAgent:
         messages.append(("user", "{question}"))
         
         # 응답 생성을 위한 최종 체인 구성
-        # 0.7의 Temperature로 적절한 친절함과 창의성을 유도합니다.
         final_prompt = ChatPromptTemplate.from_messages(messages)
         final_llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model="gpt-4o-mini", temperature=0.7)
         final_chain = final_prompt | final_llm | self.parser
         
+        # 💡 [추가된 로직] LCEL 체인 구성 요소 3가지 로그 출력
+        print("\n" + "="*60)
+        print("🔍 [디버깅] 최종 LCEL 체인 구성 요소 확인")
+        print("="*60)
+        print(f"1️⃣ [Prompt] \n{final_prompt.format(question=question)}")
+        print("-" * 60)
+        print(f"2️⃣ [LLM] \nModel: {final_llm.model_name} | Temperature: {final_llm.temperature}")
+        print("-" * 60)
+        print(f"3️⃣ [Parser] \nType: {type(self.parser).__name__}")
+        print("="*60 + "\n")
+
         print(f"🔥 [Pipeline] LangChain 엔진을 통해 최종 답변 생성 중...")
-        return final_chain.invoke({"question": question})
+        
+        # 💡 [추가된 로직] 바로 반환하지 않고 변수에 담아 터미널에 먼저 출력
+        final_answer = final_chain.invoke({"question": question})
+        
+        print("\n" + "="*60)
+        print("📢 [디버깅] 최종 생성된 답변 출력")
+        print("="*60)
+        print(final_answer)
+        print("="*60 + "\n")
+        
+        return final_answer
