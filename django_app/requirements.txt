@@ -1,0 +1,32 @@
+# ========================================
+# 4차 프로젝트 — 냉털봇 (Django) requirements
+# Python 3.11 권장
+# ========================================
+
+# Django 본체
+Django==5.1.4
+
+# 환경변수
+python-dotenv==1.2.2
+
+# DB (MongoDB Atlas)
+pymongo==4.16.0
+
+# LangChain (3차 프로젝트와 동일 버전 유지)
+langchain==1.2.15
+langchain-classic==1.0.3
+langchain-community==0.4.1
+langchain-core==1.2.26
+langchain-openai==1.1.12
+langchain-text-splitters==1.1.1
+
+# OpenAI
+openai==2.30.0
+tiktoken==0.12.0
+
+# 웹 검색 Fallback
+requests==2.33.1
+beautifulsoup4==4.14.3
+
+# 운영용 WSGI 서버 (옵션)
+gunicorn==23.0.0

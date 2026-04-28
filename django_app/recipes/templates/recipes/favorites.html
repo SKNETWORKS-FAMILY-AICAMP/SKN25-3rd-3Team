@@ -1,0 +1,64 @@
+{% extends "recipes/base.html" %}
+{% block title %}내 저장 레시피 — 냉털봇{% endblock %}
+
+{% block content %}
+<div class="fav-wrap">
+  <div class="fav-head">
+    <a href="{% url 'recipes:index' %}" class="fav-back">← 냉장고로</a>
+    <h1>★ 내 저장 레시피</h1>
+    <div class="fav-count">{{ favorites|length }}개</div>
+  </div>
+
+  {% if favorites %}
+    <div class="fav-grid">
+      {% for f in favorites %}
+        <div class="fav-card" data-fav-id="{{ f.id }}">
+          <div class="fav-card-head">
+            <span class="src-badge {{ f.source }}">{{ f.get_source_display }}</span>
+            <button type="button" class="fav-del-btn" data-fav-id="{{ f.id }}" title="저장 취소">★</button>
+          </div>
+          <div class="fav-title">{{ f.title }}</div>
+          {% if f.ingredients_summary %}
+            <div class="fav-ing">{{ f.ingredients_summary|truncatechars:120 }}</div>
+          {% endif %}
+          {% if f.url %}
+            <a class="fav-link" href="{{ f.url }}" target="_blank" rel="noopener">원문 보기 ↗</a>
+          {% endif %}
+          <div class="fav-meta">{{ f.created_at|date:"Y.m.d H:i" }} 저장</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="fav-empty">
+      <div class="fav-empty-icon">🍽️</div>
+      <p>아직 저장한 레시피가 없어요.</p>
+      <p>냉장고에서 마음에 드는 레시피의 ★ 버튼을 눌러보세요!</p>
+      <a href="{% url 'recipes:index' %}" class="auth-btn" style="display:inline-block; text-decoration:none; margin-top:16px;">냉장고 열기</a>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+  document.querySelectorAll('.fav-del-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('저장을 취소하시겠어요?')) return;
+      const id = btn.dataset.favId;
+      const csrf = document.cookie.match(/csrftoken=([^;]+)/);
+      try {
+        const res = await fetch('/api/favorites/' + id + '/', {
+          method: 'DELETE',
+          headers: { 'X-CSRFToken': csrf ? csrf[1] : '' },
+        });
+        if (res.ok) {
+          document.querySelector('.fav-card[data-fav-id="' + id + '"]').remove();
+          const cnt = document.querySelectorAll('.fav-card').length;
+          document.querySelector('.fav-count').textContent = cnt + '개';
+          if (cnt === 0) location.reload();
+        } else {
+          alert('삭제 실패');
+        }
+      } catch (e) { alert('네트워크 오류: ' + e.message); }
+    });
+  });
+</script>
+{% endblock %}

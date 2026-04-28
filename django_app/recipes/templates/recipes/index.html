@@ -1,0 +1,129 @@
+{% extends "recipes/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="scene">
+    <div class="fridge" id="fridge">
+      <div class="fridge-top"></div>
+
+      <!-- 냉장고 내부(채팅) -->
+      <div class="inner" id="chatInner">
+        <div class="hdr">
+          <div class="hdr-av">🍳</div>
+          <div>
+            <div class="hdr-title">냉털봇</div>
+            <div class="hdr-sub">재료 소진 레시피 AI · 3단 Fallback</div>
+          </div>
+        </div>
+
+        <div class="chat" id="chatBody">
+          {% for m in messages %}
+            {% if m.role == 'user' %}
+              <div class="m u">
+                <div class="m-icon">🙋</div>
+                <div class="bub u">{{ m.text|linebreaksbr }}</div>
+              </div>
+            {% else %}
+              <div class="m">
+                <div class="m-icon">🤖</div>
+                <div class="bub b">{{ m.text|linebreaksbr }}</div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <div class="bottom-area">
+          <div class="faq-lbl">✨ 자주 찾는 기능</div>
+          <div class="faq-grid">
+            <button class="faq-btn" type="button" data-faq="🥕 재료로 레시피 찾기">🥕 재료로 레시피 찾기</button>
+            <button class="faq-btn" type="button" data-faq="📅 오늘 뭐 먹지?">📅 오늘 뭐 먹지?</button>
+            <button class="faq-btn" type="button" data-faq="🔥 재료 소진 플랜">🔥 재료 소진 플랜</button>
+            <button class="faq-btn" type="button" data-faq="💪 다이어트 레시피">💪 다이어트 레시피</button>
+          </div>
+
+          <div class="pref-header" id="prefToggle">
+            <span id="prefArrow">▶</span> ⚙️ 취향 설정
+          </div>
+          <div class="pref-body" id="prefBody">
+            <div class="pref-row">
+              <label>알레르기</label>
+              <input type="text" id="allergyInput" value="{{ allergies }}">
+            </div>
+            <div class="pref-row">
+              <label>난이도</label>
+              <select id="diffInput">
+                <option {% if difficulty == '초보' %}selected{% endif %}>초보</option>
+                <option {% if difficulty == '보통' %}selected{% endif %}>보통</option>
+                <option {% if difficulty == '고수' %}selected{% endif %}>고수</option>
+              </select>
+            </div>
+            <div class="pref-row">
+              <label>조리시간</label>
+              <select id="timeInput">
+                <option {% if cooking_time == '15분' %}selected{% endif %}>15분</option>
+                <option {% if cooking_time == '20분' %}selected{% endif %}>20분</option>
+                <option {% if cooking_time == '30분' %}selected{% endif %}>30분</option>
+              </select>
+            </div>
+          </div>
+          <button class="action-btn" type="button" id="openSauce">🧴 소스 및 양념 저장하기</button>
+          <button class="action-btn ghost" type="button" id="resetChat">🧹 대화 비우기</button>
+        </div>
+
+        <div class="inp-area">
+          <input type="text" id="msgInput" placeholder="재료를 입력하세요..." autocomplete="off">
+          <button class="send-btn" type="button" id="sendBtn">
+            <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 소스 저장 페이지 -->
+      <div class="sauce-page" id="saucePage">
+        <div class="sauce-hdr">
+          내 소스 저장하기
+          <button class="sauce-close" type="button" id="closeSauce">✕</button>
+        </div>
+        <div class="sauce-body" id="sauceBody"></div>
+        <button class="sauce-save-btn" type="button" id="saveSauces">✅ 선택 완료 및 저장</button>
+      </div>
+
+      <!-- 냉장고 문 -->
+      <div class="doors" id="doors">
+        <div class="door door-l" id="doorL">
+          <div class="d-handle"></div>
+          <div class="door-logo">🧊</div>
+          <div class="door-hint">탭하여 시작</div>
+        </div>
+        <div class="door door-r" id="doorR">
+          <div class="d-handle"></div>
+          <div class="door-logo">🍳</div>
+          <div class="door-hint">탭하여 시작</div>
+        </div>
+      </div>
+    </div>
+    <div class="scene-foot">
+      <button class="big-btn" type="button" id="bigToggle">🧊 냉털 AI 시작하기</button>
+    </div>
+  </div>
+</div>
+
+{# JSON 데이터 안전 주입 — Django 권장 방식 #}
+{{ saved_sauces|json_script:"data-saved-sauces" }}
+{{ messages|json_script:"data-messages" }}
+
+{# 4차 추가 데이터 — 인증 상태, 기존 즐겨찾기 mongo_id 목록 #}
+<script id="data-auth" type="application/json">{"isAuthenticated": {% if user.is_authenticated %}true{% else %}false{% endif %}, "username": "{{ user.username|escapejs }}"}</script>
+{{ favorite_mongo_ids|json_script:"data-favorite-ids" }}
+
+<div id="data-config"
+     data-chat-api="{% url 'recipes:chat_api' %}"
+     data-prefs-api="{% url 'recipes:prefs_api' %}"
+     data-reset-api="{% url 'recipes:reset_api' %}"
+     hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'recipes/js/fridge.js' %}"></script>
+{% endblock %}
