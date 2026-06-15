@@ -7,7 +7,7 @@
 | 김연준 | [@kgbrladuswns](https://github.com/kgbrladuswns) | 코드베이스 구축, 정규화 DDL 생성, ETL Transform  |
 | 전운열 | [@cudaboy](https://github.com/cudaboy) | LangChain 아키텍처 구축, 발표 |
 | 조은석 | [@silverstone-1004](https://github.com/silverstone-1004) | 데이터베이스 구축, 데이터 파이프라인 설계 |
-| 최유림 | [@yulim8823](https://github.com/yulim8823) | 아이디어 제시, 웹 크롤링, 발표 자료(PPT) 작성 |
+| 최유림 | [@yulim8823](https://github.com/yulim8823) | 아이디어 제시, 웹 크롤링, frontend 작업, 발표 자료(PPT) 작성 |
 
 
 # 2. 프로젝트 기간
